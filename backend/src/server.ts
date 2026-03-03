@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import buildApp from "./app";
+import { pool } from './db/client';
 import { FastifyReply, FastifyRequest } from 'fastify';
 
 const start = async () => {
@@ -11,6 +12,10 @@ const start = async () => {
         uptime: process.uptime()
       });
     });
+
+    await pool.connect()
+      .then(() => { console.log('Database connected') })
+      .catch((e) => { console.error('Database connection error', e) });
 
     await app.listen({
       port: Number(process.env.PORT),
