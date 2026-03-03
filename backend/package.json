@@ -1,14 +1,35 @@
 {
   "name": "prompt-urls",
   "version": "1.0.0",
-  "description": "",
+  "description": "server of prompt urls",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.28.2"
+  "packageManager": "pnpm@10.28.2",
+  "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "@fastify/helmet": "^13.0.2",
+    "@fastify/rate-limit": "^10.3.0",
+    "@types/pg": "^8.18.0",
+    "dotenv": "^17.3.1",
+    "drizzle-orm": "^0.45.1",
+    "fastify": "^5.7.4",
+    "node": "^25.7.0",
+    "pg": "^8.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.3",
+    "drizzle-kit": "^0.31.9",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
 }
