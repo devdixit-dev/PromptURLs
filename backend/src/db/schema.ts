@@ -9,7 +9,6 @@ export const users = pgTable("users", {
   id: uuid("user_id").defaultRandom().primaryKey(),
   ip: integer().default(0).notNull(),
   userAgent: text("user_agent").notNull(),
-  name: text("name").default("guest"),
   ...timestamps
 });
 
