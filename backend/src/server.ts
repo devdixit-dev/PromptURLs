@@ -3,6 +3,9 @@ import buildApp from "./app";
 import { pool } from './db/client';
 import { FastifyReply, FastifyRequest } from 'fastify';
 
+import rootRoutes from './routes/root.route';
+import adminRoute from './routes/admin.route';
+
 const start = async () => {
   const app = buildApp();
   try {
@@ -12,6 +15,9 @@ const start = async () => {
         uptime: process.uptime()
       });
     });
+
+    app.register(rootRoutes, {prefix: "/api/root"});
+    app.register(adminRoute, {prefix: "/api/admin"});
 
     await pool.connect()
       .then(() => { console.log('Database connected') })

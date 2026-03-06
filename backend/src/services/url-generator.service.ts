@@ -13,7 +13,7 @@ const models = {
   }
 }
 
-function UrlGenerator(text) {
+function UrlGenerator(text: string) {
   if (!text || typeof text !== "string") {
     throw new Error("Query text must be a string");
   }
@@ -24,3 +24,5 @@ function UrlGenerator(text) {
     return `${provider.base}${encodedQuery}`;
   });
 }
+
+export default UrlGenerator;
