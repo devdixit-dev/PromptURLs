@@ -1,12 +1,20 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import UrlGenerator from "../services/url-generator.service";
 import { db } from "../db/client";
-import { users } from "../db/schema";
+import { modelRequests, users } from "../db/schema";
 import { eq, sql } from "drizzle-orm";
 
 type GeneratePromptBody = {
   prompt: string;
   userId?: string;
+};
+
+type RequestModelBody = {
+  name: string;
+  modelName: string;
+  provider: string;
+  urgency?: string;
+  details?: string;
 };
 
 const isUuid = (value: string) =>
@@ -30,7 +38,16 @@ export const checkRoot = async (_: FastifyRequest, res: FastifyReply) => {
 export const generatePrompts = async (req: FastifyRequest, res: FastifyReply) => {
   try {
     const { prompt, userId } = req.body as GeneratePromptBody;
-    if(!prompt) throw new Error("Invalid or missing prompt");
+    const cleanPrompt = prompt?.trim();
+    if (!cleanPrompt) {
+      return res.status(400).send({ message: "Invalid or missing prompt" });
+    }
+
+    if (cleanPrompt.length > 4000) {
+      return res
+        .status(413)
+        .send({ message: "Prompt too long. Max length is 4000 characters." });
+    }
 
     const safeUserAgent = req.headers["user-agent"] ?? "unknown";
     const safeUserId = typeof userId === "string" && isUuid(userId) ? userId : undefined;
@@ -49,7 +66,7 @@ export const generatePrompts = async (req: FastifyRequest, res: FastifyReply) =>
           .set({
             ip: req.ip,
             userAgent: safeUserAgent,
-            promptHistory: sql`array_append(coalesce(${users.promptHistory}, '{}'::text[]), ${prompt})`,
+            promptHistory: sql`array_append(coalesce(${users.promptHistory}, '{}'::text[]), ${cleanPrompt})`,
             updatedAt: new Date(),
           })
           .where(eq(users.id, resolvedUserId));
@@ -60,7 +77,7 @@ export const generatePrompts = async (req: FastifyRequest, res: FastifyReply) =>
             id: resolvedUserId,
             ip: req.ip,
             userAgent: safeUserAgent,
-            promptHistory: [prompt],
+            promptHistory: [cleanPrompt],
           })
           .returning({ id: users.id });
 
@@ -72,14 +89,14 @@ export const generatePrompts = async (req: FastifyRequest, res: FastifyReply) =>
         .values({
           ip: req.ip,
           userAgent: safeUserAgent,
-          promptHistory: [prompt],
+          promptHistory: [cleanPrompt],
         })
         .returning({ id: users.id });
 
       resolvedUserId = createdUser.id;
     }
 
-    const urls = UrlGenerator(prompt);
+    const urls = UrlGenerator(cleanPrompt);
     
     return res.status(200).send({
       userId: resolvedUserId,
@@ -88,6 +105,67 @@ export const generatePrompts = async (req: FastifyRequest, res: FastifyReply) =>
   }
   catch (e) {
     console.error("Error in generating prompt", e);
-    return null;
+    return res.status(500).send({
+      message: "Internal server error",
+    });
+  }
+}
+
+export const requestModel = async (req: FastifyRequest, res: FastifyReply) => {
+  try{
+    const { name, modelName, provider, urgency, details } = req.body as RequestModelBody;
+    const cleanName = name?.trim();
+    const cleanModelName = modelName?.trim();
+    const cleanProvider = provider?.trim();
+    const cleanDetails = details?.trim();
+    const cleanUrgency = urgency?.trim().toLowerCase();
+
+    if (!cleanName || !cleanModelName || !cleanProvider || !cleanDetails) {
+      return res.status(400).send({
+        message: "Name, model name, provider and details are required",
+      });
+    }
+
+    if (
+      cleanName.length > 120 ||
+      cleanModelName.length > 120 ||
+      cleanProvider.length > 120 ||
+      cleanDetails.length > 3000
+    ) {
+      return res.status(413).send({
+        message: "One or more fields exceed allowed length",
+      });
+    }
+
+    if (
+      cleanUrgency &&
+      !["normal", "high", "critical"].includes(cleanUrgency)
+    ) {
+      return res.status(400).send({
+        message: "Urgency must be one of: normal, high, critical",
+      });
+    }
+
+    const [savedRequest] = await db
+      .insert(modelRequests)
+      .values({
+        name: cleanName,
+        modelName: cleanModelName,
+        provider: cleanProvider,
+        urgency: cleanUrgency as "normal" | "high" | "critical" | undefined,
+        details: cleanDetails,
+      })
+      .returning({ id: modelRequests.id });
+
+    return res.status(200).send({
+      message: "Request sent",
+      requestId: savedRequest.id,
+    });
+  }
+  catch(e) {
+    console.error("Error in requesting a model", e);
+    return res.status(500).send({
+      message: 'Internal server error'
+    });
   }
 }

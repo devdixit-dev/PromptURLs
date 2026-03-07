@@ -9,7 +9,10 @@ import rateLimit from '@fastify/rate-limit';
 import rootRoutes from './routes/root.route';
 import adminRoute from './routes/admin.route';
 
-const allowedOrigins = process.env.DEV_URL || process.env.PRO_URL;
+const allowedOrigins = [process.env.DEV_URL, process.env.PRO_URL]
+  .flatMap((value) => (value ? value.split(",") : []))
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const start = async () => {
   const app = buildApp();
@@ -23,7 +26,14 @@ const start = async () => {
 
     // cors
     app.register(cors, {
-      origin: allowedOrigins,
+      origin: (origin, callback) => {
+        if (!origin) {
+          callback(null, true);
+          return;
+        }
+
+        callback(null, allowedOrigins.includes(origin));
+      },
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
       credentials: true
     });
@@ -42,7 +52,9 @@ const start = async () => {
     });
 
     // helmet
-    app.register(helmet);
+    app.register(helmet, {
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+    });
 
     app.register(rootRoutes, {prefix: "/api/root"});
     app.register(adminRoute, {prefix: "/api/admin"});
