@@ -2,9 +2,14 @@ import 'dotenv/config';
 import buildApp from "./app";
 import { pool } from './db/client';
 import { FastifyReply, FastifyRequest } from 'fastify';
+import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 
 import rootRoutes from './routes/root.route';
 import adminRoute from './routes/admin.route';
+
+const allowedOrigins = process.env.DEV_URL || process.env.PRO_URL;
 
 const start = async () => {
   const app = buildApp();
@@ -15,6 +20,29 @@ const start = async () => {
         uptime: process.uptime()
       });
     });
+
+    // cors
+    app.register(cors, {
+      origin: allowedOrigins,
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      credentials: true
+    });
+
+    // rate-limit
+    app.register(rateLimit, {
+      max: 100,
+      timeWindow: "1 minute",
+      errorResponseBuilder(req, context) {
+        return {
+          statusCode: 429,
+          error: "Too many requests",
+          message: `Rate limit exceeded. Try again in ${context.after}`
+        }
+      },
+    });
+
+    // helmet
+    app.register(helmet);
 
     app.register(rootRoutes, {prefix: "/api/root"});
     app.register(adminRoute, {prefix: "/api/admin"});

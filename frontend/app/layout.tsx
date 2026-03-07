@@ -8,7 +8,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FastPromptURLs",
+  title: "PromptURLs",
   description: "Craft and share AI prompt URLs with precision.",
 };
 

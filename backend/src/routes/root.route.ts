@@ -1,7 +1,8 @@
 import { FastifyInstance } from "fastify";
-import { generatePrompts } from "../controllers/root.controller";
+import { checkRoot, generatePrompts } from "../controllers/root.controller";
 
 const rootRoutes = async (fastify: FastifyInstance) => {
+  fastify.get('/', checkRoot)
   fastify.post('/generate', generatePrompts);
 }
 
