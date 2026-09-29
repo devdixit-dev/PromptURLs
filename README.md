@@ -1,110 +1,28 @@
 # PromptURLs
 
-PromptURLs is a full-stack web app to generate ready-to-open prompt links for major AI providers from a single prompt.
+PromptURLs creates ready-to-open prompt links for ChatGPT, Claude, Gemini, and Grok from one prompt. The app is a single full-stack Next.js 16 application: the App Router serves the interface and Route Handlers, with PostgreSQL accessed through Drizzle ORM.
 
-It currently supports:
-- ChatGPT
-- Claude
-- Gemini (Google)
-- Grok
+## Stack
 
-## Tech Stack
-- Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS
-- Backend: Fastify, TypeScript, Drizzle ORM, PostgreSQL
+- Next.js 16, React 19, TypeScript, Tailwind CSS
+- Next.js Route Handlers for prompt generation and model requests
+- PostgreSQL and Drizzle ORM for user prompt metadata and model requests
 
-## Project Structure
-```text
-PromptURLs/
-|- frontend/   # Next.js client app (port 5173 in dev)
-|- backend/    # Fastify API + Drizzle + PostgreSQL
-```
+## Run locally
 
-## Features
-- Generate provider-specific prompt URLs from one input
-- Open or copy generated links quickly
-- Prompt history stored in browser local storage
-- Persistent user/prompt metadata in PostgreSQL
-- Model request form (`/api/root/request`) for new provider/model support
+1. Install dependencies: `npm install --prefix frontend`
+2. Copy `frontend/.env.example` to `frontend/.env.local` and set `DATABASE_URL`.
+3. Apply the existing database migrations: `npm --prefix frontend run db:migrate`
+4. Start the app: `npm run dev`
 
-## Local Setup
+The app runs at `http://localhost:5173`. Root scripts are also available for `build`, `start`, `lint`, `db:generate`, and `db:migrate`.
 
-### 1) Clone and move into project
-```bash
-git clone <your-repo-url>
-cd PromptURLs
-```
+## API
 
-### 2) Configure backend environment
-Create `backend/.env`:
-```env
-PORT=3000
-DATABASE_URL=postgresql://<user>:<password>@<host>:<port>/<db>
-DEV_URL=http://localhost:5173
-PRO_URL=https://your-frontend-domain.com
-```
+- `GET /api/root` — API health check
+- `POST /api/root/generate` — validate a prompt, persist it to PostgreSQL, and return provider URLs
+- `POST /api/root/request` — validate and persist a model/provider request
 
-### 3) Install dependencies
-Backend (pnpm):
-```bash
-cd backend
-pnpm install
-```
+The Next.js application requires the Node.js runtime for its PostgreSQL Route Handlers. Set `DATABASE_URL` in the environment used to start the Next.js server. No separately deployed API service or `NEXT_PUBLIC_BACKEND_URL` is needed.
 
-Frontend (npm):
-```bash
-cd ../frontend
-npm install
-```
-
-### 4) Run database migrations
-```bash
-cd ../backend
-pnpm migrate
-```
-
-### 5) Start both apps
-Backend:
-```bash
-cd backend
-pnpm dev
-```
-
-Frontend (new terminal):
-```bash
-cd frontend
-npm run dev
-```
-
-App URLs:
-- Frontend: `http://localhost:5173`
-- Backend health: `http://localhost:3000/`
-
-## Frontend Environment
-If your backend is not running on `http://localhost:3000`, create `frontend/.env.local`:
-```env
-NEXT_PUBLIC_BACKEND_URL=http://localhost:3000
-```
-
-## API Endpoints
-- `GET /` -> health check
-- `GET /api/root` -> root API check
-- `POST /api/root/generate` -> generate prompt URLs
-- `POST /api/root/request` -> submit model/provider request
-
-## Contributing
-Contributions are welcome and appreciated.
-
-If you want to contribute:
-1. Fork the repo
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Make your changes with clear commits
-4. Open a pull request with context, screenshots (if UI changes), and testing notes
-
-Please keep changes focused, typed, and aligned with the existing code style.
-
-## Collaboration Invite
-If you want to collaborate on PromptURLs (features, design, backend improvements, integrations, or scaling), open an issue or start a discussion in this repository.
-
-You can also connect directly:
-- LinkedIn: https://www.linkedin.com/in/devershdixit/
-- GitHub: https://github.com/devdixit-dev
+Prompt history in the browser remains in local storage. PostgreSQL retains the existing user/prompt metadata and model request records using the current schema and migrations.

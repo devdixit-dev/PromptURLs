@@ -117,8 +117,6 @@ const ProviderIcon = ({
   );
 };
 
-const backendBaseUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
 const LOCAL_USER_ID_KEY = "prompturls_user_id";
 const LOCAL_PROMPT_HISTORY_KEY = "prompturls_prompt_history";
 const MAX_PROMPT_HISTORY_ITEMS = 24;
@@ -269,7 +267,7 @@ export default function Home() {
       setError(null);
       setCards((prev) => prev.map((card) => ({ ...card, state: "Loading..." })));
 
-      const response = await fetch(`${backendBaseUrl}/api/root/generate`, {
+      const response = await fetch("/api/root/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -355,7 +353,7 @@ export default function Home() {
       setRequestModelMessage(null);
       setRequestModelError(null);
 
-      const response = await fetch(`${backendBaseUrl}/api/root/request`, {
+      const response = await fetch("/api/root/request", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
